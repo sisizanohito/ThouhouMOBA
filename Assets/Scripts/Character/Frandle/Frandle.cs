@@ -6,7 +6,7 @@ using UnityEditor;
 #endif
 
 [RequireComponent(typeof(Animator))]
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(CapsuleCollider))]
 [RequireComponent(typeof(Rigidbody))]
 public class Frandle : MonoBehaviour
 {
@@ -26,7 +26,7 @@ public class Frandle : MonoBehaviour
     // ジャンプ威力
     public float jumpPower = 3.0f;
     // キャラクターコントローラ（カプセルコライダ）の参照
-    private CharacterController col;
+    private CapsuleCollider col;
     private Rigidbody rb;
 
     // CapsuleColliderで設定されているコライダのHeiht、Centerの初期値を収める変数
@@ -39,6 +39,7 @@ public class Frandle : MonoBehaviour
     private GameObject cameraObject;            // メインカメラへの参照
     private bool forward, back, right, left;    // 移動フラグ
     private bool jumpFlag;                      // ジャンプのフラグ
+    private Vector2 mouse;
 
     // アニメーター各ステートへの参照
     static int idleState = Animator.StringToHash("Idle");
@@ -51,19 +52,23 @@ public class Frandle : MonoBehaviour
     {
         jumpFlag = false;
         forward = back = right = left = false;
+        back = false;
+        mouse = new Vector2();
 
         // Animatorコンポーネントを取得する
         anim = GetComponent<Animator>();
         // CapsuleColliderコンポーネントを取得する（カプセル型コリジョン）
-        col = GetComponent<CharacterController>();
+        col = GetComponent<CapsuleCollider>();
         rb = GetComponent<Rigidbody>();
         //メインカメラを取得する
         cameraObject = GameObject.FindWithTag("MainCamera");
         // CapsuleColliderコンポーネントのHeight、Centerの初期値を保存する
         orgColHight = col.height;
         orgVectColCenter = col.center;
+
         TMInputMnager.Instance.OnKeyDown += OnKeyDown;
         TMInputMnager.Instance.OnKeyUP += OnKeyUp;
+        TMInputMnager.Instance.OnMoveMouse += OnMoveMouse;
     }
 
     // Update is called once per frame
@@ -71,7 +76,6 @@ public class Frandle : MonoBehaviour
     {
             // キャラクターコントローラ（カプセルコライダ）の移動量
         Vector3 velocity = GetVelocity();
-        Debug.Log("FixedUpdate");
         anim.SetFloat("Speed", velocity.magnitude);                          // Animator側で設定している"Speed"パラメタにvを渡す
         anim.SetBool("Back", back);
         anim.SetFloat("Direction", velocity.x);                      // Animator側で設定している"Direction"パラメタにhを渡す
@@ -109,7 +113,9 @@ public class Frandle : MonoBehaviour
         }
 
         // 上下のキー入力でキャラクターを移動させる
-        col.Move(moveVelocity * Time.fixedDeltaTime);
+        rb.MovePosition(transform.position+(moveVelocity * Time.fixedDeltaTime));
+
+        
 
         // 以下、Animatorの各ステート中での処理
         // Locomotion中
@@ -126,7 +132,7 @@ public class Frandle : MonoBehaviour
         // 現在のベースレイヤーがjumpStateの時
         else if (currentBaseState.shortNameHash == jumpState)
         {
-            cameraObject.SendMessage("setCameraPositionJumpView");  // ジャンプ中のカメラに変更
+            
                                                                     // ステートがトランジション中でない場合
             if (!anim.IsInTransition(0))
             {
@@ -196,7 +202,8 @@ public class Frandle : MonoBehaviour
 
     void Update()
     {
-        
+        // 入力でキャラクタをY軸で旋回させる
+        transform.Rotate(0, mouse.x * rotateSpeed * Time.deltaTime, 0);
     }
 
     private void OnDisable()
@@ -205,6 +212,7 @@ public class Frandle : MonoBehaviour
         {
             TMInputMnager.Instance.OnKeyDown -= OnKeyDown;
             TMInputMnager.Instance.OnKeyUP -= OnKeyUp;
+            TMInputMnager.Instance.OnMoveMouse -= OnMoveMouse;
         }
     }
 
@@ -258,6 +266,11 @@ public class Frandle : MonoBehaviour
         {
             jumpFlag = false;		                // ジャンプ
         }
+    }
+
+    private void OnMoveMouse(Vector2 mouse)
+    {
+        this.mouse = mouse;
     }
 
     private Vector3 GetVelocity()

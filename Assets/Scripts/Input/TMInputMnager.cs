@@ -9,6 +9,7 @@ public class TMInputMnager : SingletonMonoBehaviour<TMInputMnager>
     public Action<List<KeyCode>> OnKey;
     public Action<List<KeyCode>> OnKeyDown;
     public Action<List<KeyCode>> OnKeyUP;
+    public Action<Vector2> OnMoveMouse;
 
 
     /// <summary>
@@ -17,8 +18,10 @@ public class TMInputMnager : SingletonMonoBehaviour<TMInputMnager>
     static Array KeyCodeList;
 
     private bool InputMnagerFlag;
+
     protected override void Init()
     {
+        Cursor.lockState = CursorLockMode.Locked;
         InputMnagerFlag = true;
         KeyCodeList = Enum.GetValues(typeof(KeyCode));
         base.Init();
@@ -65,6 +68,13 @@ public class TMInputMnager : SingletonMonoBehaviour<TMInputMnager>
         {//1つでも押下キーがあれば
             OnKeyDown(tmpDownList);
         }
+
+        var mouse = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y"));
+        if (OnMoveMouse != null)
+        {
+            OnMoveMouse(mouse);
+        }
+        
 
 
     }

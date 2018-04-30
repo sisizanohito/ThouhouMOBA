@@ -1,4 +1,7 @@
 {
-	"dependencies": {
-	}
+  "dependencies": {
+    "com.unity.ads": "exclude",
+    "com.unity.probuilder": "3.0.6",
+    "com.unity.package-manager-ui": "1.9.6"
+  }
 }
