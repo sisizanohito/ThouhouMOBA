@@ -58,6 +58,15 @@ public class SingletonMonoBehaviour<T> : MonoBehaviourWithInit where T : MonoBeh
         Debug.LogError(typeof(T) + " is duplicated");
     }
 
+    public static bool IsInstance()
+    {
+        if(_instance != null)
+        {
+            return true;
+        }
+        return false;
+    }
+
 }
 
 /// <summary>
