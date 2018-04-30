@@ -25,6 +25,8 @@ public class Frandle : MonoBehaviour
     public float rotateSpeed = 2.0f;
     // ジャンプ威力
     public float jumpPower = 3.0f;
+    // 回転補完
+    public float smoothAngle = 3.0f;
     // キャラクターコントローラ（カプセルコライダ）の参照
     private CapsuleCollider col;
     private Rigidbody rb;
@@ -40,6 +42,7 @@ public class Frandle : MonoBehaviour
     private bool forward, back, right, left;    // 移動フラグ
     private bool jumpFlag;                      // ジャンプのフラグ
     private Vector2 mouse;
+    private float smoothDirection = 0.0f;
 
     // アニメーター各ステートへの参照
     static int idleState = Animator.StringToHash("Idle");
@@ -76,9 +79,10 @@ public class Frandle : MonoBehaviour
     {
             // キャラクターコントローラ（カプセルコライダ）の移動量
         Vector3 velocity = GetVelocity();
+        smoothDirection = Mathf.Lerp(smoothDirection, velocity.x, Time.fixedDeltaTime * smoothAngle);
         anim.SetFloat("Speed", velocity.magnitude);                          // Animator側で設定している"Speed"パラメタにvを渡す
         anim.SetBool("Back", back);
-        anim.SetFloat("Direction", velocity.x);                      // Animator側で設定している"Direction"パラメタにhを渡す
+        anim.SetFloat("Direction", smoothDirection);                      // Animator側で設定している"Direction"パラメタにhを渡す
         anim.speed = animSpeed;                             // Animatorのモーション再生速度に animSpeedを設定する
         currentBaseState = anim.GetCurrentAnimatorStateInfo(0); // 参照用のステート変数にBase Layer (0)の現在のステートを設定する
 
@@ -87,11 +91,11 @@ public class Frandle : MonoBehaviour
         // キャラクターのローカル空間での方向に変換
         var moveVelocity = transform.TransformDirection(velocity).normalized;
 
-        if (velocity.z > 0.1)
+        if (!back && moveVelocity.magnitude > 0)
         {
             moveVelocity *= forwardSpeed;       // 移動速度を掛ける
         }
-        else if (velocity.z < -0.1)
+        else if (back && moveVelocity.magnitude > 0)
         {
             moveVelocity *= backwardSpeed;  // 移動速度を掛ける
         }
@@ -112,6 +116,7 @@ public class Frandle : MonoBehaviour
             }
         }
 
+        Debug.Log(moveVelocity.magnitude);
         // 上下のキー入力でキャラクターを移動させる
         rb.MovePosition(transform.position+(moveVelocity * Time.fixedDeltaTime));
 
@@ -202,8 +207,7 @@ public class Frandle : MonoBehaviour
 
     void Update()
     {
-        // 入力でキャラクタをY軸で旋回させる
-        transform.Rotate(0, mouse.x * rotateSpeed * Time.deltaTime, 0);
+       
     }
 
     private void OnDisable()
@@ -271,6 +275,8 @@ public class Frandle : MonoBehaviour
     private void OnMoveMouse(Vector2 mouse)
     {
         this.mouse = mouse;
+        // 入力でキャラクタをY軸で旋回させる
+        transform.Rotate(0, mouse.x * rotateSpeed * Time.deltaTime, 0);
     }
 
     private Vector3 GetVelocity()
